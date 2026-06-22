@@ -2,6 +2,10 @@
 
 A Python-based cloud compliance and governance scanner that simulates corporate infrastructure audits. It identifies orphaned storage cost risks, flags public security exposures, and calculates financial optimization metrics.
 
+## Dashboard Preview
+
+![Cloud Cost Guardian dashboard](screenshots/cloud-cost-dashboard.png)
+
 ## Features
 
 - **Cost Leak Tracking:** Detects unattached volumes, idle database assets, and underutilized compute.
