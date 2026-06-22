@@ -9,3 +9,7 @@ env/
 mock_cloud_infrastructure.json
 cloud_cost_report.md
 cloud_cost_summary.json
+
+# Frontend dependencies and build output
+node_modules/
+dist/
