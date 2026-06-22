@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Generated scanner outputs
+mock_cloud_infrastructure.json
+cloud_cost_report.md
+cloud_cost_summary.json
