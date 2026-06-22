@@ -1,0 +1,10 @@
+services:
+  cost-scanner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloud-cost-guardian:latest
+    working_dir: /app/reports
+    volumes:
+      - ./reports:/app/reports
+    command: ["--format", "markdown"]

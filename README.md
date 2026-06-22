@@ -39,3 +39,38 @@ python cost_guardian.py --format json
 ## Example Output
 
 The default mock scan highlights annualized waste, prioritized remediation actions, and public exposure findings that are useful for IT operations, DevOps, FinOps, and cloud governance conversations.
+
+## Container Deployment (Docker)
+
+Build the Docker image from the project root:
+
+```bash
+docker build -t cloud-cost-guardian .
+```
+
+Run the scanner directly with Docker and generate a Markdown report:
+
+```bash
+docker run --rm -v "${PWD}/reports:/app/reports" -w /app/reports cloud-cost-guardian --format markdown
+```
+
+Run the scanner directly with Docker and generate a raw JSON summary:
+
+```bash
+docker run --rm -v "${PWD}/reports:/app/reports" -w /app/reports cloud-cost-guardian --format json
+```
+
+Run the scanner with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+Pass CLI flags through Docker Compose by overriding the service command:
+
+```bash
+docker compose run --rm cost-scanner --format markdown
+docker compose run --rm cost-scanner --format json
+```
+
+Generated reports are written to the local `reports/` directory through the `./reports:/app/reports` volume mapping.
