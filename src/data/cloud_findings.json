@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-06-24T22:16:38+00:00",
+  "organization": "ExampleCorp",
+  "currency": "USD",
+  "asset_counts": {
+    "ec2_instances": 4,
+    "ebs_volumes": 4,
+    "rds_databases": 3
+  },
+  "estimated_monthly_waste_usd": 413.81,
+  "estimated_annual_waste_usd": 4965.72,
+  "security_exposure_count": 3,
+  "finding_count": 10,
+  "findings": [
+    {
+      "severity": "critical",
+      "category": "security_exposure",
+      "resource_id": "db-old-crm",
+      "provider": "aws",
+      "region": "us-east-1",
+      "monthly_waste_usd": 0.0,
+      "recommendation": "Remove public accessibility and require private network access.",
+      "detail": "Database is publicly accessible."
+    },
+    {
+      "severity": "critical",
+      "category": "security_exposure",
+      "resource_id": "i-0b45admin01",
+      "provider": "aws",
+      "region": "us-east-1",
+      "monthly_waste_usd": 0.0,
+      "recommendation": "Restrict admin ingress to VPN, SSO broker, or approved office CIDR ranges.",
+      "detail": "Public instance exposes admin port(s): 22, 3389."
+    },
+    {
+      "severity": "high",
+      "category": "orphaned_storage",
+      "resource_id": "vol-0cc333",
+      "provider": "aws",
+      "region": "eu-west-2",
+      "monthly_waste_usd": 256.0,
+      "recommendation": "Snapshot if retention is required, then delete the unattached volume.",
+      "detail": "2048 GB io2 volume is unattached."
+    },
+    {
+      "severity": "high",
+      "category": "idle_database",
+      "resource_id": "db-old-crm",
+      "provider": "aws",
+      "region": "us-east-1",
+      "monthly_waste_usd": 24.82,
+      "recommendation": "Confirm ownership, take final backup, then stop, downsize, or decommission.",
+      "detail": "db.t3.small averages 0.7% CPU and 0 connections."
+    },
+    {
+      "severity": "medium",
+      "category": "orphaned_storage",
+      "resource_id": "vol-0bb222",
+      "provider": "aws",
+      "region": "us-east-1",
+      "monthly_waste_usd": 76.0,
+      "recommendation": "Snapshot if retention is required, then delete the unattached volume.",
+      "detail": "950 GB gp3 volume is unattached."
+    },
+    {
+      "severity": "medium",
+      "category": "orphaned_storage",
+      "resource_id": "disk-az-4477",
+      "provider": "azure",
+      "region": "eastus",
+      "monthly_waste_usd": 25.6,
+      "recommendation": "Snapshot if retention is required, then delete the unattached volume.",
+      "detail": "512 GB standard volume is unattached."
+    },
+    {
+      "severity": "medium",
+      "category": "underutilized_compute",
+      "resource_id": "vm-az-dev-analytics-01",
+      "provider": "azure",
+      "region": "eastus",
+      "monthly_waste_usd": 15.184,
+      "recommendation": "Rightsize, schedule off-hours shutdown, or migrate workload to shared capacity.",
+      "detail": "t3.medium averages 1.4% CPU over 14 days."
+    },
+    {
+      "severity": "medium",
+      "category": "idle_database",
+      "resource_id": "sql-az-test-ledger",
+      "provider": "azure",
+      "region": "eastus",
+      "monthly_waste_usd": 12.41,
+      "recommendation": "Confirm ownership, take final backup, then stop, downsize, or decommission.",
+      "detail": "db.t3.micro averages 1.1% CPU and 1 connections."
+    },
+    {
+      "severity": "medium",
+      "category": "underutilized_compute",
+      "resource_id": "i-0b45admin01",
+      "provider": "aws",
+      "region": "us-east-1",
+      "monthly_waste_usd": 3.796,
+      "recommendation": "Rightsize, schedule off-hours shutdown, or migrate workload to shared capacity.",
+      "detail": "t3.micro averages 3.2% CPU over 14 days."
+    },
+    {
+      "severity": "medium",
+      "category": "security_exposure",
+      "resource_id": "vol-0bb222",
+      "provider": "aws",
+      "region": "us-east-1",
+      "monthly_waste_usd": 0.0,
+      "recommendation": "Encrypt replacement storage and restrict reuse of the unencrypted asset.",
+      "detail": "Volume is not encrypted at rest."
+    }
+  ]
+}

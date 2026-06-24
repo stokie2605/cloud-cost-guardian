@@ -1,112 +1,11 @@
 import React, { useMemo, useState } from "react";
-
-const findings = [
-  {
-    severity: "critical",
-    category: "Security Exposure",
-    resourceId: "db-old-crm",
-    provider: "AWS",
-    region: "us-east-1",
-    monthlyWaste: 0,
-    status: "Needs Review",
-    detail: "Database is publicly accessible.",
-  },
-  {
-    severity: "critical",
-    category: "Security Exposure",
-    resourceId: "i-0b45admin01",
-    provider: "AWS",
-    region: "us-east-1",
-    monthlyWaste: 0,
-    status: "Lock Down",
-    detail: "Public instance exposes admin ports 22 and 3389.",
-  },
-  {
-    severity: "high",
-    category: "Orphaned Storage",
-    resourceId: "vol-0cc333",
-    provider: "AWS",
-    region: "eu-west-2",
-    monthlyWaste: 256,
-    status: "Safe to Delete",
-    detail: "2048 GB io2 volume is unattached.",
-  },
-  {
-    severity: "high",
-    category: "Idle Database",
-    resourceId: "db-old-crm",
-    provider: "AWS",
-    region: "us-east-1",
-    monthlyWaste: 24.82,
-    status: "Needs Review",
-    detail: "db.t3.small averages 0.7% CPU and 0 connections.",
-  },
-  {
-    severity: "medium",
-    category: "Orphaned Storage",
-    resourceId: "vol-0bb222",
-    provider: "AWS",
-    region: "us-east-1",
-    monthlyWaste: 76,
-    status: "Safe to Delete",
-    detail: "950 GB gp3 volume is unattached.",
-  },
-  {
-    severity: "medium",
-    category: "Orphaned Storage",
-    resourceId: "disk-az-4477",
-    provider: "Azure",
-    region: "eastus",
-    monthlyWaste: 25.6,
-    status: "Safe to Delete",
-    detail: "512 GB standard volume is unattached.",
-  },
-  {
-    severity: "medium",
-    category: "Underutilized Compute",
-    resourceId: "vm-az-dev-analytics-01",
-    provider: "Azure",
-    region: "eastus",
-    monthlyWaste: 15.18,
-    status: "Rightsize",
-    detail: "t3.medium averages 1.4% CPU over 14 days.",
-  },
-  {
-    severity: "medium",
-    category: "Idle Database",
-    resourceId: "sql-az-test-ledger",
-    provider: "Azure",
-    region: "eastus",
-    monthlyWaste: 12.41,
-    status: "Needs Review",
-    detail: "db.t3.micro averages 1.1% CPU and 1 connection.",
-  },
-  {
-    severity: "medium",
-    category: "Underutilized Compute",
-    resourceId: "i-0b45admin01",
-    provider: "AWS",
-    region: "us-east-1",
-    monthlyWaste: 3.8,
-    status: "Rightsize",
-    detail: "t3.micro averages 3.2% CPU over 14 days.",
-  },
-  {
-    severity: "medium",
-    category: "Security Exposure",
-    resourceId: "vol-0bb222",
-    provider: "AWS",
-    region: "us-east-1",
-    monthlyWaste: 0,
-    status: "Encrypt",
-    detail: "Volume is not encrypted at rest.",
-  },
-];
+import scannerSummary from "./src/data/cloud_findings.json";
 
 const severityStyles = {
   critical: "border-red-400/40 bg-red-500/15 text-red-100",
   high: "border-amber-300/40 bg-amber-400/15 text-amber-100",
   medium: "border-sky-300/40 bg-sky-400/15 text-sky-100",
+  low: "border-emerald-300/40 bg-emerald-400/15 text-emerald-100",
 };
 
 const statusStyles = {
@@ -117,16 +16,149 @@ const statusStyles = {
   Encrypt: "bg-violet-400/15 text-violet-100 ring-violet-300/30",
 };
 
+const categoryLabels = {
+  orphaned_storage: "Orphaned Storage",
+  idle_database: "Idle Database",
+  underutilized_compute: "Underutilized Compute",
+  security_exposure: "Security Exposure",
+};
+
 function currency(value) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: scannerSummary.currency || "USD",
   }).format(value);
+}
+
+function formatProvider(provider) {
+  if (provider.toLowerCase() === "aws") {
+    return "AWS";
+  }
+
+  return provider.charAt(0).toUpperCase() + provider.slice(1);
+}
+
+function getStatus(finding) {
+  const detail = finding.detail.toLowerCase();
+
+  if (finding.category === "orphaned_storage") {
+    return "Safe to Delete";
+  }
+
+  if (finding.category === "idle_database") {
+    return "Needs Review";
+  }
+
+  if (finding.category === "underutilized_compute") {
+    return "Rightsize";
+  }
+
+  if (detail.includes("encrypted")) {
+    return "Encrypt";
+  }
+
+  if (detail.includes("admin") || detail.includes("port")) {
+    return "Lock Down";
+  }
+
+  return "Needs Review";
+}
+
+function normalizeFinding(finding) {
+  return {
+    severity: finding.severity,
+    category: categoryLabels[finding.category] || finding.category,
+    rawCategory: finding.category,
+    resourceId: finding.resource_id,
+    provider: formatProvider(finding.provider),
+    region: finding.region,
+    monthlyWaste: finding.monthly_waste_usd,
+    status: getStatus(finding),
+    detail: finding.detail,
+    recommendation: finding.recommendation,
+  };
+}
+
+function buildMarkdownChecklist(summary, findings) {
+  const groupedFindings = findings.reduce((groups, finding) => {
+    const key = finding.severity.toUpperCase();
+    return {
+      ...groups,
+      [key]: [...(groups[key] || []), finding],
+    };
+  }, {});
+
+  const sections = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+    .filter((severity) => groupedFindings[severity]?.length)
+    .map((severity) => {
+      const rows = groupedFindings[severity]
+        .map(
+          (finding) =>
+            `- [ ] \`${finding.resourceId}\` (${finding.category}, ${finding.region}): ${finding.recommendation}`
+        )
+        .join("\n");
+
+      return `## ${severity}\n\n${rows}`;
+    })
+    .join("\n\n");
+
+  return `# Cloud Cost Guardian Remediation Checklist
+
+Generated: ${summary.generated_at}
+Organization: ${summary.organization}
+
+## Executive Summary
+
+- Estimated monthly waste: ${currency(summary.estimated_monthly_waste_usd)}
+- Estimated annualized waste: ${currency(summary.estimated_annual_waste_usd)}
+- Findings: ${summary.finding_count}
+- Security exposures: ${summary.security_exposure_count}
+
+${sections}
+`;
+}
+
+function downloadJson(summary) {
+  const blob = new Blob([JSON.stringify(summary, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "cloud_cost_summary.json";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
 }
 
 export default function CloudDashboard() {
   const [query, setQuery] = useState("");
   const [viewMode, setViewMode] = useState("report");
+  const [exportMessage, setExportMessage] = useState("");
+
+  const findings = useMemo(
+    () => scannerSummary.findings.map((finding) => normalizeFinding(finding)),
+    []
+  );
 
   const filteredFindings = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -143,30 +175,40 @@ export default function CloudDashboard() {
         finding.category,
         finding.status,
         finding.detail,
+        finding.recommendation,
       ]
         .join(" ")
         .toLowerCase()
         .includes(normalizedQuery)
     );
-  }, [query]);
+  }, [findings, query]);
 
-  const totals = useMemo(() => {
-    const monthlyWaste = findings.reduce((sum, finding) => sum + finding.monthlyWaste, 0);
-    const exposures = findings.filter((finding) => finding.category === "Security Exposure").length;
-    const critical = findings.filter((finding) => finding.severity === "critical").length;
+  const totals = useMemo(
+    () => ({
+      monthlyWaste: scannerSummary.estimated_monthly_waste_usd,
+      annualWaste: scannerSummary.estimated_annual_waste_usd,
+      exposures: scannerSummary.security_exposure_count,
+      critical: scannerSummary.findings.filter((finding) => finding.severity === "critical")
+        .length,
+    }),
+    []
+  );
 
-    return {
-      monthlyWaste,
-      annualWaste: monthlyWaste * 12,
-      exposures,
-      critical,
-    };
-  }, []);
+  function handleJsonExport() {
+    downloadJson(scannerSummary);
+    setExportMessage("JSON summary downloaded.");
+  }
+
+  async function handleMarkdownCopy() {
+    const checklist = buildMarkdownChecklist(scannerSummary, findings);
+    await copyText(checklist);
+    setExportMessage("Markdown remediation checklist copied.");
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <section className="mx-auto flex max-w-7xl flex-col gap-6">
-        <header className="flex flex-col justify-between gap-4 border-b border-white/10 pb-6 md:flex-row md:items-end">
+        <header className="flex flex-col justify-between gap-4 border-b border-white/10 pb-6 lg:flex-row lg:items-end">
           <div>
             <p className="text-sm font-medium uppercase tracking-wide text-cyan-300">
               Cloud Cost Guardian
@@ -175,38 +217,61 @@ export default function CloudDashboard() {
               Cloud Optimization Dashboard
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              Visual scanner console for prioritizing cost leaks, security exposures, and
+              Scanner-backed console for prioritizing cost leaks, security exposures, and
               remediation work across AWS and Azure estates.
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              Source: Python scanner output at src/data/cloud_findings.json
             </p>
           </div>
 
-          <div className="inline-flex rounded-lg border border-white/10 bg-white/5 p-1">
-            <button
-              className={`rounded-md px-4 py-2 text-sm font-medium transition ${
-                viewMode === "report"
-                  ? "bg-cyan-300 text-slate-950"
-                  : "text-slate-300 hover:bg-white/10 hover:text-white"
-              }`}
-              type="button"
-              onClick={() => setViewMode("report")}
-            >
-              Visual Report Card
-            </button>
-            <button
-              className={`rounded-md px-4 py-2 text-sm font-medium transition ${
-                viewMode === "json"
-                  ? "bg-cyan-300 text-slate-950"
-                  : "text-slate-300 hover:bg-white/10 hover:text-white"
-              }`}
-              type="button"
-              onClick={() => setViewMode("json")}
-            >
-              Raw JSON Log View
-            </button>
+          <div className="flex flex-col gap-3 sm:items-end">
+            <div className="inline-flex rounded-lg border border-white/10 bg-white/5 p-1">
+              <button
+                className={`rounded-md px-4 py-2 text-sm font-medium transition ${
+                  viewMode === "report"
+                    ? "bg-cyan-300 text-slate-950"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white"
+                }`}
+                type="button"
+                onClick={() => setViewMode("report")}
+              >
+                Visual Report Card
+              </button>
+              <button
+                className={`rounded-md px-4 py-2 text-sm font-medium transition ${
+                  viewMode === "json"
+                    ? "bg-cyan-300 text-slate-950"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white"
+                }`}
+                type="button"
+                onClick={() => setViewMode("json")}
+              >
+                Raw JSON Log View
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+              <button
+                className="rounded-md border border-emerald-300/30 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+                type="button"
+                onClick={handleJsonExport}
+              >
+                Download JSON Summary
+              </button>
+              <button
+                className="rounded-md border border-cyan-300/30 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-400/20"
+                type="button"
+                onClick={handleMarkdownCopy}
+              >
+                Copy Markdown Checklist
+              </button>
+            </div>
+            {exportMessage ? <p className="text-xs text-slate-400">{exportMessage}</p> : null}
           </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid gap-4 md:grid-cols-4">
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-slate-950/30">
             <p className="text-sm text-slate-400">Monthly waste detected</p>
             <p className="mt-3 text-4xl font-semibold text-white">{currency(totals.monthlyWaste)}</p>
@@ -227,9 +292,33 @@ export default function CloudDashboard() {
               </span>
             </div>
             <p className="mt-3 text-3xl font-semibold text-white">
-              {totals.exposures} Public Exposures Detected
+              {totals.exposures} Public Exposures
             </p>
             <p className="mt-2 text-sm text-red-100/80">Prioritize before cost cleanup.</p>
+          </div>
+
+          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-slate-950/30">
+            <p className="text-sm text-slate-400">Scanner findings</p>
+            <p className="mt-3 text-4xl font-semibold text-white">{scannerSummary.finding_count}</p>
+            <p className="mt-2 text-sm text-slate-300">
+              {scannerSummary.asset_counts.ec2_instances} compute /{" "}
+              {scannerSummary.asset_counts.ebs_volumes} storage /{" "}
+              {scannerSummary.asset_counts.rds_databases} databases
+            </p>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-slate-950/30">
+          <h2 className="text-lg font-semibold text-white">Scanner to UI Pipeline</h2>
+          <div className="mt-4 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
+            {["Python scanner", "JSON findings", "React dashboard", "Export actions"].map(
+              (step, index) => (
+                <div className="rounded-md border border-white/10 bg-slate-950/50 p-4" key={step}>
+                  <p className="text-xs uppercase tracking-wide text-cyan-300">Step {index + 1}</p>
+                  <p className="mt-2 font-medium text-white">{step}</p>
+                </div>
+              )
+            )}
           </div>
         </section>
 
@@ -239,7 +328,7 @@ export default function CloudDashboard() {
               <div>
                 <h2 className="text-lg font-semibold text-white">Prioritized Findings</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                  Search by resource, region, provider, status, or finding type.
+                  Search by resource, region, provider, status, recommendation, or finding type.
                 </p>
               </div>
 
@@ -261,9 +350,10 @@ export default function CloudDashboard() {
                   <tr>
                     <th className="px-5 py-3 font-medium">Resource</th>
                     <th className="px-5 py-3 font-medium">Region</th>
-                    <th className="px-5 py-3 font-medium">Monthly Cost</th>
+                    <th className="px-5 py-3 font-medium">Monthly Waste</th>
                     <th className="px-5 py-3 font-medium">Status</th>
                     <th className="px-5 py-3 font-medium">Severity</th>
+                    <th className="px-5 py-3 font-medium">Recommendation</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
@@ -291,11 +381,15 @@ export default function CloudDashboard() {
                       <td className="px-5 py-4">
                         <span
                           className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold capitalize ${
-                            severityStyles[finding.severity]
+                            severityStyles[finding.severity] || severityStyles.low
                           }`}
                         >
                           {finding.severity}
                         </span>
+                      </td>
+                      <td className="max-w-md px-5 py-4 text-slate-300">
+                        <p>{finding.recommendation}</p>
+                        <p className="mt-1 text-xs text-slate-500">{finding.detail}</p>
                       </td>
                     </tr>
                   ))}
@@ -308,19 +402,11 @@ export default function CloudDashboard() {
             <div className="border-b border-white/10 p-5">
               <h2 className="text-lg font-semibold text-white">Raw JSON Log View</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Scanner-style payload for downstream automation or evidence packs.
+                Imported directly from the scanner-generated src/data/cloud_findings.json file.
               </p>
             </div>
             <pre className="max-h-[560px] overflow-auto p-5 text-xs leading-6 text-cyan-100">
-              {JSON.stringify(
-                {
-                  generatedBy: "cloud-cost-guardian",
-                  totals,
-                  findings,
-                },
-                null,
-                2
-              )}
+              {JSON.stringify(scannerSummary, null, 2)}
             </pre>
           </section>
         )}

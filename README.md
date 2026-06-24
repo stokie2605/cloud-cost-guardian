@@ -1,12 +1,36 @@
 # Cloud Cost Guardian
 
-[🚀 Live Demo](https://cloud-cost-guardian-ten.vercel.app)
+[Live Demo](https://cloud-cost-guardian-ten.vercel.app)
 
 Built by Dean Wilshaw.
 
 Cloud Cost Guardian is a full-stack cloud governance simulation that combines cost analysis, security exposure detection, executive reporting, and containerized delivery. It generates a realistic AWS/Azure-style infrastructure dataset, identifies waste and risk, exports technician-ready reports, and presents the findings through a modern React dashboard.
 
 The project is designed to demonstrate practical FinOps, DevOps, cloud compliance, and frontend integration skills in one portfolio-ready repository.
+
+## Case Study
+
+### Problem
+
+Cloud estates can quietly accumulate orphaned storage, idle databases, underutilized compute, and public security exposure. The technical risk is only half the problem: teams also need a clear way to turn raw findings into a prioritized remediation plan that stakeholders can understand.
+
+### Solution
+
+Cloud Cost Guardian now works as a scanner-to-dashboard workflow. The Python scanner generates a simulated AWS/Azure estate, analyzes it for cost and security issues, writes a structured JSON findings file, and the React dashboard imports that same file as its source of truth. The UI then shows executive metrics, prioritized findings, raw JSON evidence, and export actions for handover.
+
+### Architecture Diagram
+
+```text
+Python Scanner -> src/data/cloud_findings.json -> React Dashboard -> JSON / Markdown Export Actions
+```
+
+### Production Extensions
+
+- Replace mock infrastructure with AWS Cost Explorer, EC2, EBS, RDS, and Azure Resource Graph API ingestion.
+- Store scan history in a database so trends, deltas, and remediation progress can be tracked.
+- Add authentication and role-based access for IT, DevOps, Finance, and Security stakeholders.
+- Run scheduled scans in CI/CD or a containerized job runner.
+- Send high-priority findings into ticketing, Slack, Teams, or SIEM workflows.
 
 ### Visual Output / Preview
 
@@ -30,7 +54,8 @@ The project is designed to demonstrate practical FinOps, DevOps, cloud complianc
 - Calculates monthly and annualized waste from resource type, size, instance class, and hourly/monthly cost assumptions.
 - Sorts findings by severity and financial impact so security-critical and high-cost items rise to the top.
 - Exports either a Markdown optimization report or a raw JSON summary through the `--format` CLI flag.
-- Provides a React/Vite dashboard with search, executive metrics, severity badges, and a report-to-JSON view toggle.
+- Writes scanner findings into `src/data/cloud_findings.json` so the React dashboard mirrors backend output.
+- Provides a React/Vite dashboard with search, executive metrics, severity badges, export actions, and a report-to-JSON view toggle.
 - Ships with Docker and Docker Compose so reports can be generated in a clean container with host volume persistence.
 
 ## The Business Problem
@@ -54,10 +79,13 @@ Python Scanner
        +--> Severity + Recommendation Mapping
        |
        v
-Markdown / JSON Reports
+src/data/cloud_findings.json
        |
        v
 React Executive Dashboard
+       |
+       v
+JSON Download / Markdown Checklist Copy
        |
        v
 Dockerized Runtime with Host Report Volume
@@ -76,19 +104,19 @@ Dockerized Runtime with Host Report Volume
 
 ## Local Scanner Usage
 
-Generate a Markdown optimization report:
+Generate a Markdown optimization report and refresh dashboard data:
 
 ```bash
 python cost_guardian.py --format markdown
 ```
 
-Generate a raw JSON summary for downstream tooling:
+Generate a raw JSON summary for downstream tooling and refresh dashboard data:
 
 ```bash
 python cost_guardian.py --format json
 ```
 
-The scanner writes the mock inventory and output files into the current working directory.
+The scanner writes the mock inventory and output files into the current working directory. It also refreshes `src/data/cloud_findings.json`, which is the file imported by the live React dashboard.
 
 ## Frontend Dashboard Usage
 
@@ -110,7 +138,7 @@ Create a production build:
 npm run build
 ```
 
-The dashboard highlights the same simulated governance results as an executive-facing visual report card, with a searchable findings table and raw JSON log view.
+The dashboard imports `src/data/cloud_findings.json` so the metrics and table mirror the Python scanner output. It includes a searchable findings table, raw JSON log view, JSON summary download, and Markdown remediation checklist copy action.
 
 ## Container Deployment (Docker)
 
@@ -154,6 +182,7 @@ Docker Compose maps `./reports` on the host to `/app/reports` inside the contain
 | `mock_cloud_infrastructure.json` | Generated AWS/Azure-style infrastructure inventory |
 | `cloud_cost_report.md` | Markdown optimization report for technicians and stakeholders |
 | `cloud_cost_summary.json` | Raw JSON summary for pipeline or API-style consumption |
+| `src/data/cloud_findings.json` | Scanner-generated source of truth for the React dashboard |
 | `reports/` | Host-mounted Docker output directory |
 
 ## Finding Categories
@@ -171,4 +200,5 @@ Docker Compose maps `./reports` on the host to `/app/reports` inside the contain
 - Findings include severity, category, provider, region, monthly waste, recommendation, and detail fields.
 - Markdown output is suitable for evidence packs, ticket attachments, and portfolio walkthroughs.
 - JSON output is structured for future API ingestion, dashboards, or CI/CD governance checks.
+- The frontend consumes scanner-generated JSON instead of maintaining separate hardcoded findings.
 - The container workflow keeps generated reports outside the image through a host-mounted volume.

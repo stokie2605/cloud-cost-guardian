@@ -14,6 +14,7 @@ from typing import Any
 MOCK_DATA_FILE = Path("mock_cloud_infrastructure.json")
 MARKDOWN_REPORT_FILE = Path("cloud_cost_report.md")
 JSON_SUMMARY_FILE = Path("cloud_cost_summary.json")
+FRONTEND_DATA_FILE = Path("src/data/cloud_findings.json")
 
 HOURS_PER_MONTH = 730
 RATES = {
@@ -207,6 +208,11 @@ def generate_mock_dataset() -> dict[str, Any]:
 
 def write_dataset(dataset: dict[str, Any], path: Path = MOCK_DATA_FILE) -> None:
     path.write_text(json.dumps(dataset, indent=2), encoding="utf-8")
+
+
+def write_json(payload: dict[str, Any], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def volume_rate(volume_type: str) -> float:
@@ -427,17 +433,24 @@ def main() -> None:
     dataset = generate_mock_dataset()
     write_dataset(dataset)
     summary = analyze(dataset)
+    write_json(summary, FRONTEND_DATA_FILE)
 
     if args.format == "json":
-        JSON_SUMMARY_FILE.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        write_json(summary, JSON_SUMMARY_FILE)
         print(json.dumps(summary, indent=2))
-        print(f"\nWrote dataset to {MOCK_DATA_FILE} and JSON summary to {JSON_SUMMARY_FILE}")
+        print(
+            f"\nWrote dataset to {MOCK_DATA_FILE}, JSON summary to {JSON_SUMMARY_FILE}, "
+            f"and dashboard data to {FRONTEND_DATA_FILE}"
+        )
         return
 
     report = render_markdown(summary)
     MARKDOWN_REPORT_FILE.write_text(report, encoding="utf-8")
     print(report)
-    print(f"\nWrote dataset to {MOCK_DATA_FILE} and markdown report to {MARKDOWN_REPORT_FILE}")
+    print(
+        f"\nWrote dataset to {MOCK_DATA_FILE}, markdown report to {MARKDOWN_REPORT_FILE}, "
+        f"and dashboard data to {FRONTEND_DATA_FILE}"
+    )
 
 
 if __name__ == "__main__":
