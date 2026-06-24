@@ -272,7 +272,7 @@ export default function CloudDashboard() {
                       <td className="px-5 py-4">
                         <div className="font-medium text-white">{finding.resourceId}</div>
                         <div className="mt-1 text-xs text-slate-400">
-                          {finding.provider} · {finding.category}
+                          {finding.provider} / {finding.category}
                         </div>
                       </td>
                       <td className="px-5 py-4 text-slate-300">{finding.region}</td>
