@@ -1,5 +1,7 @@
 # Cloud Cost Guardian
 
+[🚀 Live Demo](https://cloud-cost-guardian-ten.vercel.app)
+
 Built by Dean Wilshaw.
 
 Cloud Cost Guardian is a full-stack cloud governance simulation that combines cost analysis, security exposure detection, executive reporting, and containerized delivery. It generates a realistic AWS/Azure-style infrastructure dataset, identifies waste and risk, exports technician-ready reports, and presents the findings through a modern React dashboard.
