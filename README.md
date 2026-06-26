@@ -4,33 +4,27 @@
 
 Built by Dean Wilshaw.
 
-Cloud Cost Guardian is a full-stack cloud governance simulation that combines cost analysis, security exposure detection, executive reporting, and containerized delivery. It generates a realistic AWS/Azure-style infrastructure dataset, identifies waste and risk, exports technician-ready reports, and presents the findings through a modern React dashboard.
+Cloud Cost Guardian is a cloud cost automation project that scans an AWS account for idle, cost-wasting resources and can run as an automated ECS Fargate task. The current Python scanner uses `boto3` to detect unattached EBS volumes and idle Elastic IP addresses, estimates monthly waste, logs cleanly to CloudWatch, and can send a formatted Discord/Slack webhook alert.
 
-The project is designed to demonstrate practical FinOps, DevOps, cloud compliance, and frontend integration skills in one portfolio-ready repository.
+The project is designed to demonstrate practical FinOps, DevOps, AWS automation, containerized task execution, and operational reporting skills in one portfolio-ready repository.
 
 ## Case Study
 
 ### Problem
 
-Cloud estates can quietly accumulate orphaned storage, idle databases, underutilized compute, and public security exposure. The technical risk is only half the problem: teams also need a clear way to turn raw findings into a prioritized remediation plan that stakeholders can understand.
+Cloud estates quietly accumulate orphaned storage and unused public IP addresses. These resources are easy to miss, but they create recurring monthly waste and weak operational visibility unless teams scan for them on a schedule.
 
 ### Solution
 
-Cloud Cost Guardian now works as a scanner-to-dashboard workflow. The Python scanner generates a simulated AWS/Azure estate, analyzes it for cost and security issues, writes a structured JSON findings file, and the React dashboard imports that same file as its source of truth. The UI then shows executive metrics, prioritized findings, raw JSON evidence, and export actions for handover.
+Cloud Cost Guardian now works as a scheduled AWS scanner. A Python script runs inside a container, uses the ECS task role to query EC2 APIs, identifies unattached EBS volumes and idle Elastic IP addresses, estimates monthly and annualized waste, prints structured execution logs to stdout for CloudWatch, and optionally posts a formatted alert to a Discord or Slack webhook.
 
 ### Architecture Diagram
 
 ```text
-Python Scanner -> src/data/cloud_findings.json -> React Dashboard -> JSON / Markdown Export Actions
+EventBridge Schedule -> ECS Fargate Task -> Python boto3 Scanner -> CloudWatch Logs
+                                                     |
+                                                     +--> Optional Discord/Slack Webhook
 ```
-
-### Production Extensions
-
-- Replace mock infrastructure with AWS Cost Explorer, EC2, EBS, RDS, and Azure Resource Graph API ingestion.
-- Store scan history in a database so trends, deltas, and remediation progress can be tracked.
-- Add authentication and role-based access for IT, DevOps, Finance, and Security stakeholders.
-- Run scheduled scans in CI/CD or a containerized job runner.
-- Send high-priority findings into ticketing, Slack, Teams, or SIEM workflows.
 
 ### Visual Output / Preview
 
@@ -40,105 +34,59 @@ Python Scanner -> src/data/cloud_findings.json -> React Dashboard -> JSON / Mark
 +--------------------------+----------------+
 | Governance Metric        | Current Scan   |
 +--------------------------+----------------+
-| Monthly waste detected   | $413.81        |
-| Annualized waste         | $4,965.72      |
-| Security exposures       | 3              |
-| Total findings           | 10             |
+| Unattached EBS volumes   | 2              |
+| Idle Elastic IPs         | 1              |
+| Monthly waste estimate   | $24.00         |
+| Annualized waste         | $288.00        |
 +--------------------------+----------------+
 ```
 
-### Scanner Architecture & Governance Logic
+## Scanner Architecture & Governance Logic
 
-- Generates a repeatable mock cloud estate containing compute instances, storage volumes, and managed databases.
-- Detects unattached EBS/Azure storage, idle RDS-style databases, underutilized compute, public admin ingress, public database access, and unencrypted storage.
-- Calculates monthly and annualized waste from resource type, size, instance class, and hourly/monthly cost assumptions.
-- Sorts findings by severity and financial impact so security-critical and high-cost items rise to the top.
-- Exports either a Markdown optimization report or a raw JSON summary through the `--format` CLI flag.
-- Writes scanner findings into `src/data/cloud_findings.json` so the React dashboard mirrors backend output.
-- Provides a React/Vite dashboard with search, executive metrics, severity badges, export actions, and a report-to-JSON view toggle.
-- Ships with Docker and Docker Compose so reports can be generated in a clean container with host volume persistence.
-
-## The Business Problem
-
-Cloud environments often accumulate unused storage, idle databases, forgotten development compute, and overly permissive public access rules. These issues create two visible operational problems: unnecessary monthly spend and avoidable security exposure.
-
-For IT leaders, DevOps teams, and cloud administrators, the challenge is not only finding the waste, but presenting it in a way that creates fast remediation decisions.
-
-## The Solution & Architecture
-
-Cloud Cost Guardian simulates that governance workflow end to end:
-
-```text
-Mock Cloud Estate
-       |
-       v
-Python Scanner
-       |
-       +--> Cost Leak Detection
-       +--> Security Exposure Detection
-       +--> Severity + Recommendation Mapping
-       |
-       v
-src/data/cloud_findings.json
-       |
-       v
-React Executive Dashboard
-       |
-       v
-JSON Download / Markdown Checklist Copy
-       |
-       v
-Dockerized Runtime with Host Report Volume
-```
+- Uses `boto3` to scan the active AWS account in `eu-west-2` by default.
+- Detects EBS volumes with state `available`, meaning they are unattached/orphaned.
+- Detects Elastic IP addresses with no `AssociationId`, meaning they are unallocated/idle.
+- Uses simple portfolio estimates: `$10/month` per orphaned EBS volume and `$4/month` per idle Elastic IP.
+- Prints structured JSON-style execution logs to stdout so ECS/Fargate streams them into CloudWatch.
+- Checks `COST_ALERT_WEBHOOK` and sends a formatted JSON alert payload when configured.
+- Returns exit code `0` on successful scan completion and `1` on critical AWS or webhook failure.
 
 ## Technical Toolkit
 
-- **Python 3.11** for scanner logic, cost calculations, data modeling, and report generation.
-- **argparse** for CLI execution with `--format markdown` and `--format json` modes.
-- **JSON** for mock infrastructure inventory and automation-friendly output.
-- **Markdown** for technician-ready optimization reports.
-- **React + Vite** for the interactive cloud optimization dashboard.
-- **Tailwind CDN utilities** for the dark operations-console style UI.
-- **Docker + Docker Compose** for portable scanner execution and host-mounted report output.
-- **Git/GitHub** for version-controlled delivery and public portfolio presentation.
+- **Python 3.11** for scanner logic and ECS task execution.
+- **boto3** for live AWS EC2 API discovery.
+- **requests** for Discord/Slack-compatible webhook delivery.
+- **Docker** and **Docker Compose** for containerized scanner execution.
+- **React + Vite** for the public portfolio dashboard.
+- **GitHub Actions** for repository CI validation.
 
 ## Local Scanner Usage
-
-Generate a Markdown optimization report and refresh dashboard data:
-
-```bash
-python cost_guardian.py --format markdown
-```
-
-Generate a raw JSON summary for downstream tooling and refresh dashboard data:
-
-```bash
-python cost_guardian.py --format json
-```
-
-The scanner writes the mock inventory and output files into the current working directory. It also refreshes `src/data/cloud_findings.json`, which is the file imported by the live React dashboard.
-
-## Frontend Dashboard Usage
 
 Install dependencies:
 
 ```bash
-npm install
+pip install -r requirements.txt
 ```
 
-Run the Vite development server:
+Run the scanner with default region `eu-west-2`:
 
 ```bash
-npm run dev
+python cost_guardian.py
 ```
 
-Create a production build:
+Override the region:
 
 ```bash
-npm run build
+AWS_DEFAULT_REGION=eu-west-1 python cost_guardian.py
 ```
 
-The dashboard imports `src/data/cloud_findings.json` so the metrics and table mirror the Python scanner output. It includes a searchable findings table, raw JSON log view, JSON summary download, and Markdown remediation checklist copy action.
+Send alerts to Discord or Slack:
+
+```bash
+COST_ALERT_WEBHOOK=https://example.com/webhook python cost_guardian.py
+```
+
+The scanner needs AWS credentials from your shell, AWS profile, ECS task role, or another standard boto3 credential provider.
 
 ## Container Deployment (Docker)
 
@@ -148,57 +96,55 @@ Build the image:
 docker build -t cloud-cost-guardian .
 ```
 
-Run the scanner directly with Docker and write reports to the host:
+Run the scanner with your local AWS credentials mounted:
 
 ```bash
-docker run --rm -v "${PWD}/reports:/app/reports" -w /app/reports cloud-cost-guardian --format markdown
+docker run --rm \
+  -e AWS_DEFAULT_REGION=eu-west-2 \
+  -e COST_ALERT_WEBHOOK="$COST_ALERT_WEBHOOK" \
+  -v "$HOME/.aws:/root/.aws:ro" \
+  cloud-cost-guardian
 ```
 
-Run the JSON mode directly with Docker:
-
-```bash
-docker run --rm -v "${PWD}/reports:/app/reports" -w /app/reports cloud-cost-guardian --format json
-```
-
-Run the default Markdown scan through Docker Compose:
+Run through Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-Pass CLI flags through Docker Compose:
+## ECS Fargate Runtime Notes
 
-```bash
-docker compose run --rm cost-scanner --format markdown
-docker compose run --rm cost-scanner --format json
+For ECS Fargate, attach a task role that can read EC2 volume and address metadata. Minimum useful permissions:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeVolumes",
+        "ec2:DescribeAddresses"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
 ```
 
-Docker Compose maps `./reports` on the host to `/app/reports` inside the container so generated evidence survives after the container exits.
-
-## Generated Files
-
-| File | Purpose |
-| --- | --- |
-| `mock_cloud_infrastructure.json` | Generated AWS/Azure-style infrastructure inventory |
-| `cloud_cost_report.md` | Markdown optimization report for technicians and stakeholders |
-| `cloud_cost_summary.json` | Raw JSON summary for pipeline or API-style consumption |
-| `src/data/cloud_findings.json` | Scanner-generated source of truth for the React dashboard |
-| `reports/` | Host-mounted Docker output directory |
+Set `COST_ALERT_WEBHOOK` as an ECS task environment variable or secret if alert delivery is required.
 
 ## Finding Categories
 
-| Category | Example Detection |
-| --- | --- |
-| Orphaned storage | Unattached GP3, IO2, or standard managed disks |
-| Idle database | Low CPU and near-zero connection managed databases |
-| Underutilized compute | Running instances averaging under 5% CPU |
-| Security exposure | Public SSH/RDP, public database access, or unencrypted storage |
+| Category | Detection | Mock Estimate |
+| --- | --- | ---: |
+| Orphaned EBS volume | EC2 volume state is `available` | `$10/month` |
+| Idle Elastic IP | EC2 address has no `AssociationId` | `$4/month` |
 
 ## Production Readiness Notes
 
-- The scanner keeps cost assumptions centralized in a `RATES` table for simple tuning.
-- Findings include severity, category, provider, region, monthly waste, recommendation, and detail fields.
-- Markdown output is suitable for evidence packs, ticket attachments, and portfolio walkthroughs.
-- JSON output is structured for future API ingestion, dashboards, or CI/CD governance checks.
-- The frontend consumes scanner-generated JSON instead of maintaining separate hardcoded findings.
-- The container workflow keeps generated reports outside the image through a host-mounted volume.
+- Replace static estimates with AWS Pricing API or Cost Explorer data for finance-grade reporting.
+- Store scan history in S3, DynamoDB, or a time-series datastore for trend analysis.
+- Add approval workflow before deleting or releasing resources.
+- Use AWS Secrets Manager or SSM Parameter Store for webhook secrets in ECS.
+- Expand detection to idle load balancers, NAT gateways, snapshots, stopped instances, and RDS resources.
