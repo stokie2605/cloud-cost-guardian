@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  python-testing:
-    name: Python testing and linting
+  python-lint:
+    name: Python lint
     runs-on: ubuntu-latest
 
     steps:
@@ -26,7 +26,7 @@ jobs:
 
       - name: Install Python tooling and dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install flake8
           pip install -r requirements.txt
 
@@ -34,7 +34,7 @@ jobs:
         run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
   terraform-validate:
-    name: Terraform validation
+    name: Terraform validate
     runs-on: ubuntu-latest
 
     steps:
@@ -71,7 +71,7 @@ jobs:
         if: steps.terraform-directory.outputs.exists != 'true'
         run: echo "No terraform directory found; skipping Terraform validation."
 
-  security-container-scan:
+  docker-build:
     name: Docker build and Trivy scan
     runs-on: ubuntu-latest
 
@@ -92,7 +92,7 @@ jobs:
           tags: cloud-cost-guardian:test
 
       - name: Scan container image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: cloud-cost-guardian:test
           severity: HIGH,CRITICAL
