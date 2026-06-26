@@ -4,7 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
     image: cloud-cost-guardian:latest
-    working_dir: /app/reports
-    volumes:
-      - ./reports:/app/reports
-    command: ["--format", "markdown"]
+    environment:
+      AWS_DEFAULT_REGION: eu-west-2
+      COST_ALERT_WEBHOOK: ${COST_ALERT_WEBHOOK:-}
