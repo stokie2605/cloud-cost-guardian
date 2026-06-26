@@ -1,0 +1,101 @@
+name: CI/CD Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python-testing:
+    name: Python testing and linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install Python tooling and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+          pip install -r requirements.txt
+
+      - name: Run flake8 quality gate
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+  terraform-validate:
+    name: Terraform validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for Terraform directory
+        id: terraform-directory
+        shell: bash
+        run: |
+          if [ -d terraform ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Terraform 1.5.7
+        if: steps.terraform-directory.outputs.exists == 'true'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      - name: Initialize Terraform without backend
+        if: steps.terraform-directory.outputs.exists == 'true'
+        working-directory: terraform
+        run: terraform init -backend=false
+
+      - name: Validate Terraform configuration
+        if: steps.terraform-directory.outputs.exists == 'true'
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Skip Terraform validation
+        if: steps.terraform-directory.outputs.exists != 'true'
+        run: echo "No terraform directory found; skipping Terraform validation."
+
+  security-container-scan:
+    name: Docker build and Trivy scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build local test container image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: cloud-cost-guardian:test
+
+      - name: Scan container image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: cloud-cost-guardian:test
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+          format: table
