@@ -1,5 +1,7 @@
 # Cloud Cost Guardian
 
+[![CI/CD Quality Gate](https://github.com/stokie2605/cloud-cost-guardian/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/stokie2605/cloud-cost-guardian/actions/workflows/ci-cd.yml)
+
 [Live Demo](https://cloud-cost-guardian-ten.vercel.app)
 
 Built by Dean Wilshaw.
