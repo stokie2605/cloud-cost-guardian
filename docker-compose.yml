@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
     image: cloud-cost-guardian:latest
+    entrypoint: []
+    command: ["python", "cost_guardian.py", "--mock"]
     environment:
       AWS_DEFAULT_REGION: eu-west-2
       COST_ALERT_WEBHOOK: ${COST_ALERT_WEBHOOK:-}
