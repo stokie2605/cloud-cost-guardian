@@ -6,9 +6,19 @@
 
 Built by Dean Wilshaw.
 
-Cloud Cost Guardian is a cloud cost automation project that scans an AWS account for idle, cost-wasting resources and can run as an automated ECS Fargate task. The current Python scanner uses `boto3` to detect unattached EBS volumes and idle Elastic IP addresses, estimates monthly waste, logs cleanly to CloudWatch, and can send a formatted Discord/Slack webhook alert.
+Cloud Cost Guardian is an AWS FinOps automation project that scans for idle, cost-wasting resources and can run as a scheduled ECS Fargate task. The Python scanner uses `boto3` to detect unattached EBS volumes and idle Elastic IP addresses, estimates monthly waste, logs cleanly to CloudWatch, and can send a formatted Discord or Slack webhook alert.
 
-The project is designed to demonstrate practical FinOps, DevOps, AWS automation, containerized task execution, and operational reporting skills in one portfolio-ready repository.
+The project is designed to demonstrate practical cloud cost governance, DevOps automation, containerized task execution, CI/CD hygiene, and operational reporting in one portfolio-ready repository.
+
+## Recruiter Snapshot
+
+| Area | What This Project Shows |
+| --- | --- |
+| Cloud Automation | Live AWS EC2 metadata discovery using `boto3` |
+| FinOps | Monthly and annualized waste estimation for orphaned resources |
+| Containers | Dockerized scanner suitable for scheduled ECS Fargate execution |
+| Operations | CloudWatch-friendly stdout logging and webhook alert delivery |
+| Portfolio UX | React/Vite dashboard and live demo for quick visual review |
 
 ## Case Study
 
@@ -18,17 +28,38 @@ Cloud estates quietly accumulate orphaned storage and unused public IP addresses
 
 ### Solution
 
-Cloud Cost Guardian now works as a scheduled AWS scanner. A Python script runs inside a container, uses the ECS task role to query EC2 APIs, identifies unattached EBS volumes and idle Elastic IP addresses, estimates monthly and annualized waste, prints structured execution logs to stdout for CloudWatch, and optionally posts a formatted alert to a Discord or Slack webhook.
+Cloud Cost Guardian models a scheduled AWS scanner. A Python script runs inside a container, uses AWS credentials or an ECS task role to query EC2 APIs, identifies unattached EBS volumes and idle Elastic IP addresses, estimates monthly and annualized waste, prints structured logs to stdout for CloudWatch, and optionally posts a formatted alert to a Discord or Slack webhook.
 
-### Architecture Diagram
+## Architecture
 
 ```text
-EventBridge Schedule -> ECS Fargate Task -> Python boto3 Scanner -> CloudWatch Logs
-                                                     |
-                                                     +--> Optional Discord/Slack Webhook
+EventBridge Schedule
+   |
+   v
+ECS Fargate Task
+   |
+   v
+Python boto3 Scanner
+   |
+   +--> EC2 DescribeVolumes
+   +--> EC2 DescribeAddresses
+   |
+   v
+CloudWatch Logs
+   |
+   +--> Optional Discord/Slack Webhook Alert
 ```
 
-### Visual Output / Preview
+## DevOps Skills Demonstrated
+
+- Built a Python scanner that uses AWS APIs instead of hardcoded findings.
+- Containerized the scanner for repeatable local and ECS-style execution.
+- Designed the runtime around task-role permissions and standard `boto3` credential providers.
+- Added CI/CD validation through GitHub Actions.
+- Produced reviewer-friendly evidence: dashboard screenshot, live demo, run commands, IAM policy notes, and production extension path.
+- Modeled an operational pattern that could feed CloudWatch, ticketing, Slack, Teams, or FinOps reporting.
+
+## Visual Output / Preview
 
 ![Cloud Cost Guardian dashboard](screenshots/cloud-cost-dashboard.png)
 
@@ -46,10 +77,10 @@ EventBridge Schedule -> ECS Fargate Task -> Python boto3 Scanner -> CloudWatch L
 ## Scanner Architecture & Governance Logic
 
 - Uses `boto3` to scan the active AWS account in `eu-west-2` by default.
-- Detects EBS volumes with state `available`, meaning they are unattached/orphaned.
-- Detects Elastic IP addresses with no `AssociationId`, meaning they are unallocated/idle.
+- Detects EBS volumes with state `available`, meaning they are unattached or orphaned.
+- Detects Elastic IP addresses with no `AssociationId`, meaning they are unallocated or idle.
 - Uses simple portfolio estimates: `$10/month` per orphaned EBS volume and `$4/month` per idle Elastic IP.
-- Prints structured JSON-style execution logs to stdout so ECS/Fargate streams them into CloudWatch.
+- Prints structured execution logs to stdout so ECS/Fargate can stream them into CloudWatch.
 - Checks `COST_ALERT_WEBHOOK` and sends a formatted JSON alert payload when configured.
 - Returns exit code `0` on successful scan completion and `1` on critical AWS or webhook failure.
 
@@ -61,6 +92,18 @@ EventBridge Schedule -> ECS Fargate Task -> Python boto3 Scanner -> CloudWatch L
 - **Docker** and **Docker Compose** for containerized scanner execution.
 - **React + Vite** for the public portfolio dashboard.
 - **GitHub Actions** for repository CI validation.
+
+## Key Files
+
+| File | Purpose |
+| --- | --- |
+| `cost_guardian.py` | AWS scanner for unattached EBS volumes, idle Elastic IPs, waste estimates, logs, and webhook alerts |
+| `Dockerfile` | Container runtime for local or ECS-style scanner execution |
+| `docker-compose.yml` | Local container execution path for repeatable scanner runs |
+| `.github/workflows/ci-cd.yml` | CI/CD quality gate for repository validation |
+| `CloudDashboard.jsx` | React dashboard used for the public portfolio demo |
+| `screenshots/cloud-cost-dashboard.png` | Visual proof for quick recruiter review |
+| `docs/walkthrough.md` | Guided explanation of the scanner workflow and production path |
 
 ## Local Scanner Usage
 
@@ -88,9 +131,9 @@ Send alerts to Discord or Slack:
 COST_ALERT_WEBHOOK=https://example.com/webhook python cost_guardian.py
 ```
 
-The scanner needs AWS credentials from your shell, AWS profile, ECS task role, or another standard boto3 credential provider.
+The scanner needs AWS credentials from your shell, AWS profile, ECS task role, or another standard `boto3` credential provider.
 
-## Container Deployment (Docker)
+## Container Deployment
 
 Build the image:
 
@@ -138,7 +181,7 @@ Set `COST_ALERT_WEBHOOK` as an ECS task environment variable or secret if alert 
 
 ## Finding Categories
 
-| Category | Detection | Mock Estimate |
+| Category | Detection | Portfolio Estimate |
 | --- | --- | ---: |
 | Orphaned EBS volume | EC2 volume state is `available` | `$10/month` |
 | Idle Elastic IP | EC2 address has no `AssociationId` | `$4/month` |
@@ -150,3 +193,4 @@ Set `COST_ALERT_WEBHOOK` as an ECS task environment variable or secret if alert 
 - Add approval workflow before deleting or releasing resources.
 - Use AWS Secrets Manager or SSM Parameter Store for webhook secrets in ECS.
 - Expand detection to idle load balancers, NAT gateways, snapshots, stopped instances, and RDS resources.
+- Add EventBridge scheduling and Terraform-managed ECS infrastructure if this scanner is promoted from portfolio prototype to deployed workload.
