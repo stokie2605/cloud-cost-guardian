@@ -1,0 +1,18 @@
+{
+  "project": "Cloud Cost Guardian",
+  "mode": "mock",
+  "generated_at": "2026-06-29T10:00:00+00:00",
+  "region": "eu-west-2",
+  "summary": {
+    "unattached_ebs_volume_count": 2,
+    "idle_elastic_ip_count": 2,
+    "finding_count": 4,
+    "estimated_monthly_waste_usd": 28,
+    "estimated_annual_waste_usd": 336
+  },
+  "routing_notes": {
+    "cloudwatch": "stdout JSON logs are suitable for ECS/Fargate log streaming",
+    "chatops": "COST_ALERT_WEBHOOK can point at Discord, Slack, Teams proxy, or ticket automation",
+    "ticketing": "findings can be mapped into service desk incidents by resource_id and reason"
+  }
+}

@@ -194,3 +194,9 @@ Set `COST_ALERT_WEBHOOK` as an ECS task environment variable or secret if alert 
 - Use AWS Secrets Manager or SSM Parameter Store for webhook secrets in ECS.
 - Expand detection to idle load balancers, NAT gateways, snapshots, stopped instances, and RDS resources.
 - Add EventBridge scheduling and Terraform-managed ECS infrastructure if this scanner is promoted from portfolio prototype to deployed workload.
+
+## Production Notes
+
+- Environment template: [.env.example](.env.example)
+- Sample scanner output: [docs/sample-scan-output.json](docs/sample-scan-output.json)
+- Production routing notes: [docs/PRODUCTION_NOTES.md](docs/PRODUCTION_NOTES.md)
