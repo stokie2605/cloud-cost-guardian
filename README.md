@@ -195,7 +195,17 @@ Set `COST_ALERT_WEBHOOK` as an ECS task environment variable or secret if alert 
 - Expand detection to idle load balancers, NAT gateways, snapshots, stopped instances, and RDS resources.
 - Add EventBridge scheduling and Terraform-managed ECS infrastructure if this scanner is promoted from portfolio prototype to deployed workload.
 
+## Problems Faced & Solved
+
+**Problem: Making the scanner look like real cloud operations work rather than a hardcoded demo**
+The challenge was building something that would feel credible to a technical reviewer — not just a script that prints fake data, but something genuinely structured around how AWS cost and security tooling actually works.
+
+**Solution:** Used `boto3` to query real EC2 and Elastic IP metadata directly, structured the output to mirror CloudWatch-style JSON logs, and documented the ECS/Fargate production path with the exact IAM permissions needed for a real deployment. The scanner flags real resource patterns (unattached EBS volumes, unused Elastic IPs) that AWS Cost Explorer and Trusted Advisor flag in production accounts.
+
+---
+
 ## Production Notes
+
 
 - Environment template: [.env.example](.env.example)
 - Sample scanner output: [docs/sample-scan-output.json](docs/sample-scan-output.json)
