@@ -1,4 +1,4 @@
-__pycache__/
+﻿__pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
@@ -13,3 +13,27 @@ cloud_cost_summary.json
 # Frontend dependencies and build output
 node_modules/
 dist/
+
+# Environment / secrets
+.env
+.env.local
+*.env
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Python build artefacts
+*.pyc
+*.pyo
+*.egg-info/
+
+# Node/JS build artefacts
+dist-ssr/
+build/
+.firebase/
