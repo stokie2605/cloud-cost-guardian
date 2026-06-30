@@ -74,6 +74,27 @@ CloudWatch Logs
 +--------------------------+----------------+
 ```
 
+## ✅ Automated Testing
+
+The repository contains a `pytest` suite that tests all aspects of the cost scanner without calling the live AWS API:
+- Region environment variable overrides.
+- Unattached EBS volume logic.
+- Idle Elastic IP detection logic.
+- Monthly/annualized waste estimation and rounding.
+- Mocking of boto3 client paginators to verify metadata fetches.
+
+To run the unit tests locally:
+1. Install testing requirements:
+   ```bash
+   pip install -r requirements.txt -r requirements-dev.txt
+   ```
+2. Execute `pytest`:
+   ```bash
+   python -m pytest
+   ```
+
+The GitHub Actions CI pipeline runs these scanner tests automatically on every push.
+
 ## Scanner Architecture & Governance Logic
 
 - Uses `boto3` to scan the active AWS account in `eu-west-2` by default.
