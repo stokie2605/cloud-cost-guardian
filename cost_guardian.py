@@ -39,6 +39,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Bypass live boto3 AWS API calls and scan static local mock data instead.",
     )
+    parser.add_argument(
+        "--out",
+        type=str,
+        help="Path to write the JSON scan results summary.",
+    )
     return parser.parse_args()
 
 
@@ -88,7 +93,10 @@ def get_mock_data() -> dict[str, list[dict[str, Any]]]:
 
 
 def create_ec2_client(region: str):
-    return boto3.client("ec2", region_name=region)
+    endpoint_url = os.getenv("AWS_ENDPOINT_URL")
+    if endpoint_url:
+        print_log("info", "Using custom AWS endpoint", endpoint_url=endpoint_url)
+    return boto3.client("ec2", region_name=region, endpoint_url=endpoint_url)
 
 
 def fetch_live_data(region: str) -> dict[str, list[dict[str, Any]]]:
@@ -309,6 +317,17 @@ def run(args: argparse.Namespace) -> int:
         summary = build_summary(region, findings, mode)
         print_log("info", "Cloud Cost Guardian scan summary", **summary["summary"], mode=mode)
         print(json.dumps(summary, indent=2), flush=True)
+
+        if args.out:
+            try:
+                from pathlib import Path
+                out_path = Path(args.out)
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+                print_log("info", "Wrote scan results to output file", path=args.out)
+            except Exception as error:
+                print_log("error", "Failed to write output file", path=args.out, error=str(error))
+
         send_webhook(summary)
     except NoCredentialsError:
         print_log("critical", "AWS credentials were not found for the ECS task role or local environment")

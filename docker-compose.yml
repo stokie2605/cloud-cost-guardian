@@ -1,11 +1,41 @@
+version: '3.8'
+
 services:
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "127.0.0.1:4566:4566"
+    environment:
+      - SERVICES=ec2
+      - AWS_DEFAULT_REGION=eu-west-2
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./.localstack}:/var/lib/localstack"
+
+  localstack-setup:
+    image: amazon/aws-cli:latest
+    depends_on:
+      - localstack
+    entrypoint: /bin/bash
+    volumes:
+      - ./scripts:/scripts
+    command: /scripts/setup-mock-resources.sh
+    environment:
+      - AWS_ACCESS_KEY_ID=mock
+      - AWS_SECRET_ACCESS_KEY=mock
+      - AWS_DEFAULT_REGION=eu-west-2
+
   cost-scanner:
     build:
       context: .
       dockerfile: Dockerfile
-    image: cloud-cost-guardian:latest
-    entrypoint: []
-    command: ["python", "cost_guardian.py", "--mock"]
+    depends_on:
+      localstack-setup:
+        condition: service_completed_successfully
+    volumes:
+      - ./src/data:/app/src/data
     environment:
-      AWS_DEFAULT_REGION: eu-west-2
-      COST_ALERT_WEBHOOK: ${COST_ALERT_WEBHOOK:-}
+      - AWS_ACCESS_KEY_ID=mock
+      - AWS_SECRET_ACCESS_KEY=mock
+      - AWS_DEFAULT_REGION=eu-west-2
+      - AWS_ENDPOINT_URL=http://localstack:4566
+    command: ["--out", "/app/src/data/cloud_findings.json"]
