@@ -9,7 +9,6 @@
 ---
 
 ## 🎥 Visual Preview
-![Cloud Cost Guardian dashboard](screenshots/cloud-cost-dashboard.png)
 
 ```text
 +--------------------------+----------------+
