@@ -1,5 +1,5 @@
 # Cloud Cost Guardian
-<img src="cloud-cost-guardian.png" width="800" alt="Cloud Optimization Dashboard">
+<img src="screenshots/cloud-cost-dashboard.png" width="800" alt="Cloud Optimization Dashboard">
 > **The 1-Line Mission:** Automated AWS FinOps scanner that detects idle EC2 resources and estimates wasted monthly spend for DevOps and Cloud engineering teams.
 
 ### ⚡ Engineering Breakdown
