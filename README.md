@@ -1,11 +1,24 @@
-# Cloud Cost Guardian
-<img src="screenshots/cloud-cost-dashboard.png" width="800" alt="Cloud Optimization Dashboard">
-> **The 1-Line Mission:** Automated AWS FinOps scanner that detects idle EC2 resources and estimates wasted monthly spend for DevOps and Cloud engineering teams.
+# AWS Cloud Cost Guardian
 
-### ⚡ Engineering Breakdown
-* **The Problem:** Cloud estates quietly accumulate orphaned storage and unused public IP addresses, leading to silent, recurring monthly waste and weak operational visibility.
-* **The Solution:** A containerized Python scanner that queries EC2 APIs via Boto3, calculates monthly and annualized waste estimates, outputs structured logs to CloudWatch, and triggers Discord/Slack alerts, accompanied by a React/Vite visualization dashboard.
-* **The Tech Stack:** `AWS Boto3` `Python` `React` `Docker`
+An automated cloud governance and FinOps utility designed to run scheduled resource audits, identify orphaned infrastructure, and alert administrators to cloud spend leakages.
+
+<div align="center">
+  <img src="screenshots/cloud-cost-dashboard.png" width="800" alt="Cloud Optimization Dashboard">
+</div>
+
+---
+
+### ⚡ Operational Focus
+* **The Problem:** Left unchecked, cloud environments accumulate orphaned assets (such as unattached EBS volumes and idle Elastic IPs) that silently inflate enterprise AWS bills.
+* **The Solution:** A Python-based automation engine that queries AWS infrastructure via the Boto3 SDK, evaluates assets against cost-compliance policies, and flags immediately actionable savings.
+
+---
+
+### 🛠️ Core Capabilities
+* **Orphaned Asset Detection:** Automated scripts that systematically target and list unattached storage volumes and unallocated public IP addresses.
+* **Resource Drift Diagnostics:** Evaluates running instance profiles and configurations to flag deviations from cloud budgeting guidelines.
+* **FinOps Governance Reporting:** Generates clean, structured JSON summaries mapping detected cost leaks to specific AWS regions for rapid remediation.
+* **Automated Cleanup Hooks:** Built to easily integrate with scheduled tasks (cron/Lambda) to automatically de-provision verified waste resources.
 
 ---
 
@@ -50,7 +63,7 @@ CloudWatch Logs
 
 ---
 
-## 🛠️ Local Execution & Setup
+## 🛠️ Local Setup & Execution
 
 ### Running with Docker (Recommended)
 1. Configure your AWS credentials in `.env` (refer to `.env.example`).
@@ -70,9 +83,10 @@ This repository contains a mock-based `pytest` suite ensuring offline verificati
    python -m pytest
    ```
 
+---
 
-### Recent Project Cleanups & Upgrades
-* **Project Organization:** Cleaned up project folders by separating backend logic, frontend code, and testing suites.
-* **Security Fixes:** Swapped out weak authentication methods for secure hashing and tokens to protect user data.
-* **Database Tuning:** Reorganized database tables and data types to make queries run faster and handle dates/times properly.
-* **Code Cleanup:** Removed dead code, optimized slow loops, and set up strict linting rules to keep the codebase easy to read.
+## Recent Architectural Upgrades
+* **Operational Restructuring:** Standardized repository file hierarchies by separating core automation logic, helper scripts, and test files.
+* **Security Hardening:** Swapped legacy credential configs for environment variables and secure token validation policies.
+* **Database Schema Upgrades:** Refactored primitive database types into native data structures for robust ORM and transaction handling.
+* **Systems Maintenance:** Eradicated legacy diagnostic scripts, optimized loops, and established static analysis scanning to ensure code hygiene.
