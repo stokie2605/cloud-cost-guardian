@@ -71,8 +71,8 @@ This repository contains a mock-based `pytest` suite ensuring offline verificati
    ```
 
 
-## Recent Architectural Upgrades
-- **Structural Hygiene:** Reorganized the repository into distinct `src/`, `backend/`, and `tests/` directories.
-- **Security Enhancements:** Implemented constant-time cryptographic token verification to prevent timing attacks.
-- **Database Schema Upgrades:** Refactored primitive types into native data structures (e.g., Dates and Times) for robust ORM integration.
-- **Code Hygiene:** Eradicated dead code, legacy logs, and enforced strict linting/testing standards.
+### Recent Project Cleanups & Upgrades
+* **Project Organization:** Cleaned up project folders by separating backend logic, frontend code, and testing suites.
+* **Security Fixes:** Swapped out weak authentication methods for secure hashing and tokens to protect user data.
+* **Database Tuning:** Reorganized database tables and data types to make queries run faster and handle dates/times properly.
+* **Code Cleanup:** Removed dead code, optimized slow loops, and set up strict linting rules to keep the codebase easy to read.
