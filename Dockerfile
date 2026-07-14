@@ -14,6 +14,6 @@ COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r requirements.txt
 
-COPY cost_guardian.py README.md ./
+COPY backend/cost_guardian.py README.md ./
 
 ENTRYPOINT ["python", "/app/cost_guardian.py"]
