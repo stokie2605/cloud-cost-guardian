@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import scannerSummary from "./src/data/cloud_findings.json";
+import scannerSummary from "./data/cloud_findings.json";
 
 const severityStyles = {
   critical: "border-red-400/40 bg-red-500/15 text-red-100",
